@@ -103,3 +103,35 @@ body { background: var(--gray-bg); }
     .pdf-sidebar { width: 100%; flex-direction: row; overflow-x: auto; height: auto; }
     .sidebar-item { white-space: nowrap; }
 }
+
+/* 檔案清單樣式 */
+.sortable-list {
+    list-style: none;
+    margin-top: 20px;
+    padding: 0;
+}
+
+.file-item {
+    background: #fff;
+    border: 1px solid #eee;
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #444;
+}
+
+/* 拖曳時的影子效果 */
+.sortable-ghost {
+    opacity: 0.4;
+    background: #fff5f5;
+    border: 1px dashed var(--primary-red);
+}
+
+#status-msg {
+    text-align: center;
+    font-size: 0.85rem;
+}
