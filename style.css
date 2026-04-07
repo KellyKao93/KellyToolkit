@@ -176,3 +176,38 @@ body { background: var(--gray-bg); }
     border-color: var(--primary-red);
     box-shadow: 0 0 5px rgba(230, 57, 70, 0.2);
 }
+
+/* 編頁碼選項區 */
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.radio-group label {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #888;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.radio-options {
+    display: flex;
+    gap: 20px;
+}
+
+.radio-options label {
+    font-size: 0.95rem;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-transform: none; /* 覆蓋上方的 uppercase */
+}
+
+/* 修飾 Radio 按鈕顏色 */
+input[type="radio"] {
+    accent-color: var(--primary-red);
+}
