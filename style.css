@@ -135,3 +135,44 @@ body { background: var(--gray-bg); }
     text-align: center;
     font-size: 0.85rem;
 }
+
+/* 工具選項區 (裁切頁碼用) */
+.tool-options-area {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin: 20px 0;
+    padding: 20px;
+    background: #fdfdfd;
+    border-radius: 8px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.input-group label {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #888;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.input-group input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 100px;
+    font-size: 1rem;
+    text-align: center;
+    outline: none;
+    transition: 0.3s;
+}
+
+.input-group input:focus {
+    border-color: var(--primary-red);
+    box-shadow: 0 0 5px rgba(230, 57, 70, 0.2);
+}
