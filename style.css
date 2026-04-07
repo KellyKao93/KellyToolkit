@@ -1,20 +1,21 @@
 :root {
-    --primary-red: #e63946; /* 類似圖片中的主色調 */
+    --primary-red: #e63946; 
     --dark-bg: #1a1a1a;
     --card-white: #ffffff;
     --text-main: #333;
     --text-light: #f1f1f1;
+    --gray-bg: #f9f9f9;
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Inter', -apple-system, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 body {
-    background-color: #f9f9f9;
+    background-color: var(--gray-bg);
 }
 
 /* 導航列 */
@@ -64,7 +65,7 @@ body {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.4); /* 讓背景模糊且壓深 */
+    background: rgba(0, 0, 0, 0.4); 
 }
 
 .container {
@@ -86,11 +87,11 @@ body {
 
 .grid-container {
     display: grid;
-    grid-template-columns: repeat(3, 160px); /* 固定方塊大小 */
+    grid-template-columns: repeat(3, 160px); 
     gap: 15px;
 }
 
-/* 白色方塊設計 */
+/* 白色方塊設計 (支援 div 與 a 標籤) */
 .card {
     background: var(--card-white);
     aspect-ratio: 1 / 1;
@@ -103,12 +104,16 @@ body {
     transition: 0.3s ease;
     cursor: pointer;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    
+    /* 修正連結預設樣式 */
+    text-decoration: none;
+    color: var(--text-main);
 }
 
 .card:hover {
     transform: translateY(-5px);
     background: var(--primary-red);
-    color: white;
+    color: white !important; /* 強制變白 */
 }
 
 .card i {
@@ -125,6 +130,7 @@ body {
 .card p {
     font-size: 0.75rem;
     opacity: 0.8;
+    line-height: 1.3;
 }
 
 /* 右側文字 */
@@ -138,6 +144,7 @@ body {
     font-size: 5rem;
     font-weight: 900;
     margin-bottom: 10px;
+    letter-spacing: -2px;
 }
 
 .hero-text p {
@@ -155,6 +162,49 @@ body {
     text-transform: uppercase;
     letter-spacing: 1px;
     cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-main:hover {
+    filter: brightness(1.2);
+}
+
+/* --- PDF 頁面專用樣式 --- */
+.pdf-container {
+    padding: 120px 0 60px;
+    min-height: 100vh;
+}
+
+.back-btn {
+    display: inline-block;
+    margin-bottom: 25px;
+    color: var(--primary-red);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.tool-section {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+.upload-area {
+    border: 2px dashed #ddd;
+    padding: 60px 20px;
+    text-align: center;
+    border-radius: 8px;
+    margin: 25px 0;
+    transition: 0.3s;
+    cursor: pointer;
+    background: #fafafa;
+}
+
+.upload-area:hover {
+    border-color: var(--primary-red);
+    background: #fff5f5;
 }
 
 /* 手機版調整 */
@@ -162,5 +212,8 @@ body {
     .hero-content { flex-direction: column-reverse; text-align: center; }
     .hero-text { padding: 0; margin-bottom: 40px; }
     .hero-text h1 { font-size: 3.5rem; }
-    .grid-container { grid-template-columns: repeat(2, 150px); }
+    .grid-container { 
+        grid-template-columns: repeat(2, 150px); 
+        justify-content: center;
+    }
 }
