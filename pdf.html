@@ -3,55 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF 多功能處理 | KellyToolkit</title>
+    <title>PDF 處理中心 | KellyToolkit</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="pdf-page">
 
     <nav class="navbar">
-        <div class="container nav-content">
+        <div class="nav-content">
             <a href="index.html" class="logo">KELLY TOOLKIT</a>
             <ul class="nav-links">
-                <li><a href="index.html">首頁</a></li>
-                <li><a href="#" class="active">PDF 工具</a></li>
+                <li><a href="index.html">返回首頁</a></li>
             </ul>
         </div>
     </nav>
 
     <main class="pdf-layout">
         <aside class="pdf-sidebar">
-            <div class="sidebar-item active" onclick="switchTool('crop')">
-                <i class="fa-solid fa-crop"></i> 裁切頁面
-            </div>
-            <div class="sidebar-item" onclick="switchTool('merge')">
-                <i class="fa-solid fa-object-group"></i> 合成檔案
-            </div>
-            <div class="sidebar-item" onclick="switchTool('number')">
-                <i class="fa-solid fa-list-ol"></i> 編頁碼
-            </div>
-            <div class="sidebar-item" onclick="switchTool('rotate')">
-                <i class="fa-solid fa-rotate"></i> 旋轉頁面
-            </div>
-            <div class="sidebar-item" onclick="switchTool('ocr')">
-                <i class="fa-solid fa-eye"></i> 文字辨識 (OCR)
-            </div>
+            <div class="sidebar-item active" onclick="switchTool('crop')"><i class="fa-solid fa-crop"></i> 裁切頁面</div>
+            <div class="sidebar-item" onclick="switchTool('merge')"><i class="fa-solid fa-object-group"></i> 合成檔案</div>
+            <div class="sidebar-item" onclick="switchTool('number')"><i class="fa-solid fa-list-ol"></i> 編頁碼</div>
+            <div class="sidebar-item" onclick="switchTool('rotate')"><i class="fa-solid fa-rotate"></i> 旋轉頁面</div>
+            <div class="sidebar-item" onclick="switchTool('ocr')"><i class="fa-solid fa-eye"></i> 文字辨識</div>
         </aside>
 
         <section class="pdf-workspace">
             <div class="workspace-card">
                 <h2 id="tool-title">裁切頁面</h2>
-                <p id="tool-desc">請上傳 PDF 檔案以進行範圍裁切。</p>
+                <p id="tool-desc">請上傳 PDF 檔案以進行範圍裁切。所有操作均在本地完成，不會上傳伺服器。</p>
 
-                <div class="upload-box" id="drop-zone">
+                <div class="upload-box" onclick="document.getElementById('file-input').click()">
                     <input type="file" id="file-input" hidden multiple>
                     <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <p>拖曳檔案至此 或 <span>點擊上傳</span></p>
-                    <small>檔案僅在瀏覽器處理，不會上傳至伺服器</small>
+                    <p>拖曳檔案至此 或 <span>點擊上傳檔案</span></p>
                 </div>
-
-                <div id="tool-options" class="options-grid">
-                    </div>
 
                 <button class="btn-execute">開始執行</button>
             </div>
@@ -59,31 +44,23 @@
     </main>
 
     <script>
-        const toolData = {
+        const tools = {
             crop: { title: "裁切頁面", desc: "自定義 PDF 頁面尺寸與裁切範圍。" },
             merge: { title: "合成檔案", desc: "將多個 PDF 檔案合併為一個文件。" },
             number: { title: "編頁碼", desc: "在頁面指定位置自動插入頁碼。" },
             rotate: { title: "旋轉頁面", desc: "修正 PDF 頁面方向（順時針/逆時針 90度）。" },
-            ocr: { title: "文字辨識 (OCR)", desc: "透過 Tesseract.js 在前端辨識圖片型 PDF 文字。" }
+            ocr: { title: "文字辨識 (OCR)", desc: "透過 OCR 技術辨識圖片型 PDF 內容。" }
         };
 
         function switchTool(toolId) {
-            // 1. 切換側欄狀態
-            document.querySelectorAll('.sidebar-item').forEach(item => {
-                item.classList.remove('active');
-            });
+            // 切換選單狀態
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
             event.currentTarget.classList.add('active');
 
-            // 2. 更新內容
-            document.getElementById('tool-title').innerText = toolData[toolId].title;
-            document.getElementById('tool-desc').innerText = toolData[toolId].desc;
-
-            // 3. 可以在這裡根據 toolId 增加不同的 UI 控制項
-            console.log("切換至工具: " + toolId);
+            // 切換內容
+            document.getElementById('tool-title').innerText = tools[toolId].title;
+            document.getElementById('tool-desc').innerText = tools[toolId].desc;
         }
-
-        // 綁定點擊上傳
-        document.getElementById('drop-zone').onclick = () => document.getElementById('file-input').click();
     </script>
 </body>
 </html>
