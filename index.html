@@ -3,76 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Toolkit | KellyToolkit</title>
+    <title>Kelly Toolkit | Minimalist</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        /* PDF 頁面專屬微調 */
-        .pdf-container {
-            padding-top: 100px;
-            min-height: 100vh;
-            background: #f4f4f4;
-        }
-        .back-btn {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: #e63946;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .tool-section {
-            background: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-        .upload-area {
-            border: 2px dashed #ccc;
-            padding: 50px;
-            text-align: center;
-            border-radius: 8px;
-            margin-top: 20px;
-            transition: 0.3s;
-            cursor: pointer;
-        }
-        .upload-area:hover {
-            border-color: #e63946;
-            background: #fff5f5;
-        }
-    </style>
 </head>
 <body>
 
-    <nav class="navbar" style="background: #333;"> <div class="container" style="display: flex; justify-content: space-between; align-items: center; height: 60px; padding: 0 20px;">
-            <a href="index.html" style="color: white; text-decoration: none; font-weight: bold;">KELLY TOOLKIT</a>
-            <span style="color: #aaa; font-size: 0.8rem;">PDF Offline Processor</span>
-        </div>
-    </nav>
-
-    <main class="pdf-container">
-        <div class="container" style="max-width: 800px; margin: 0 auto; padding: 0 20px;">
-            <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
-            
-            <section class="tool-section">
-                <h1>PDF 處理工具</h1>
-                <p style="color: #666; margin-bottom: 30px;">
-                    所有操作皆在瀏覽器前端完成，<strong style="color: #e63946;">檔案不會上傳至伺服器</strong>，符合隱私與無 LOG 需求。
-                </p>
-
-                <div class="upload-area">
-                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: #ddd; margin-bottom: 15px;"></i>
-                    <p>點擊或拖曳 PDF 檔案至此處</p>
-                    <input type="file" style="display: none;" id="pdfUpload">
+    <header class="hero">
+        <div class="overlay"></div>
+        <div class="container hero-content">
+            <div class="grid-container">
+                <a href="pdf.html" class="card">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <h3>PDF 處理</h3>
+                    <p>裁切、合成、編頁碼、旋轉與 OCR</p>
+                </a>
+                
+                <div class="card">
+                    <i class="fa-solid fa-code-branch"></i>
+                    <h3>對話紀錄分割</h3>
+                    <p>小工具</p>
+                </div>
+                
+                <div class="card">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                    <h3>系統工具</h3>
+                    <p>開發中...</p>
                 </div>
 
-                <div style="margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <button class="btn-main" style="background: #555; width: 100%;">裁切/旋轉</button>
-                    <button class="btn-main" style="background: #555; width: 100%;">OCR 文字辨識</button>
-                    <button class="btn-main" style="width: 100%; grid-column: span 2;">開始合併檔案</button>
+                <div class="card">
+                    <i class="fa-solid fa-cloud"></i>
+                    <h3>雲端整合</h3>
+                    <p>開發中...</p>
                 </div>
-            </section>
+
+                <div class="card">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <h3>資訊安全</h3>
+                    <p>開發中...</p>
+                </div>
+
+                <div class="card">
+                    <i class="fa-solid fa-compass"></i>
+                    <h3>生活紀錄</h3>
+                    <p>開發中...</p>
+                </div>
+            </div>
+
+            <div class="hero-text">
+                <h1>KellyToolkit.</h1>
+                <p>所有動作皆無 LOG 紀錄，請安心使用</p>
+                <button class="btn-main">EXPLORE MORE</button>
+            </div>
         </div>
-    </main>
+    </header>
 
 </body>
 </html>
