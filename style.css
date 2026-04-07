@@ -1,337 +1,437 @@
 :root {
+
     --primary-red: #e63946; 
+
     --dark-bg: #1a1a1a;
+
     --card-white: #ffffff;
+
     --text-main: #333;
+
     --text-light: #f1f1f1;
+
     --gray-bg: #f9f9f9;
-    --sidebar-width: 250px;
+
 }
+
+
 
 * {
+
     margin: 0;
+
     padding: 0;
+
     box-sizing: border-box;
+
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
 }
+
+
 
 body {
+
     background-color: var(--gray-bg);
-    color: var(--text-main);
+
 }
 
-/* --- 導航列 --- */
+
+
+/* 導航列 */
+
 .navbar {
+
     background-color: var(--primary-red);
+
     height: 60px;
+
     display: flex;
+
     align-items: center;
+
     position: fixed;
+
     width: 100%;
+
     z-index: 1000;
+
 }
+
+
 
 .nav-content {
+
     display: flex;
+
     justify-content: space-between;
+
     width: 100%;
+
     max-width: 1100px;
+
     margin: 0 auto;
+
     padding: 0 20px;
+
     color: white;
+
 }
+
+
 
 .nav-links {
+
     display: flex;
+
     list-style: none;
+
 }
+
+
 
 .nav-links li { margin-left: 25px; }
+
 .nav-links a { 
+
     color: white; 
+
     text-decoration: none; 
+
     font-size: 0.9rem;
+
     font-weight: 500;
-}
-.nav-links a.active {
-    border-bottom: 2px solid white;
-    padding-bottom: 5px;
+
 }
 
-/* --- 首頁 Hero 區域 --- */
+
+
+/* Hero 區域與背景 */
+
 .hero {
+
     height: 100vh;
+
     background: url('https://images.unsplash.com/photo-1510511459019-5dee667ff88b?auto=format&fit=crop&q=80&w=2070') center/cover;
+
     position: relative;
+
     display: flex;
+
     align-items: center;
+
 }
+
+
 
 .overlay {
+
     position: absolute;
+
     top: 0; left: 0;
+
     width: 100%; height: 100%;
+
     background: rgba(0, 0, 0, 0.4); 
+
 }
+
+
 
 .container {
+
     position: relative;
+
     z-index: 2;
+
     max-width: 1100px;
+
     margin: 0 auto;
+
     width: 100%;
+
     padding: 0 20px;
+
 }
 
-/* --- 首頁九宮格 --- */
+
+
+/* 九宮格佈局 */
+
 .hero-content {
+
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
+
     flex-wrap: wrap;
+
 }
+
+
 
 .grid-container {
+
     display: grid;
+
     grid-template-columns: repeat(3, 160px); 
+
     gap: 15px;
+
 }
+
+
+
+/* 白色方塊設計 (支援 div 與 a 標籤) */
 
 .card {
+
     background: var(--card-white);
+
     aspect-ratio: 1 / 1;
+
     display: flex;
+
     flex-direction: column;
+
     align-items: center;
+
     justify-content: center;
+
     text-align: center;
+
     padding: 15px;
+
     transition: 0.3s ease;
+
     cursor: pointer;
+
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+
+    
+
+    /* 修正連結預設樣式 */
+
     text-decoration: none;
+
     color: var(--text-main);
+
 }
+
+
 
 .card:hover {
+
     transform: translateY(-5px);
+
     background: var(--primary-red);
-    color: white !important;
+
+    color: white !important; /* 強制變白 */
+
 }
+
+
 
 .card i {
+
     font-size: 1.8rem;
+
     margin-bottom: 12px;
+
 }
+
+
 
 .card h3 {
+
     font-size: 1rem;
+
     font-weight: 700;
+
     margin-bottom: 5px;
+
 }
+
+
 
 .card p {
+
     font-size: 0.75rem;
+
     opacity: 0.8;
+
     line-height: 1.3;
+
 }
 
-/* 首頁文字 */
+
+
+/* 右側文字 */
+
 .hero-text {
+
     flex: 1;
+
     color: white;
+
     padding-left: 60px;
+
 }
+
+
 
 .hero-text h1 {
+
     font-size: 5rem;
+
     font-weight: 900;
+
     margin-bottom: 10px;
+
     letter-spacing: -2px;
+
 }
+
+
 
 .hero-text p {
+
     font-size: 1.2rem;
+
     margin-bottom: 30px;
+
     opacity: 0.9;
+
 }
 
-/* --- PDF 工具頁面佈局 (核心新樣式) --- */
-.pdf-page {
-    background-color: #f0f2f5;
-}
 
-.pdf-layout {
-    display: flex;
-    margin-top: 60px; /* 避開 navbar */
-    height: calc(100vh - 60px);
-}
 
-/* 左側側邊欄 */
-.pdf-sidebar {
-    width: var(--sidebar-width);
-    background: #fff;
-    border-right: 1px solid #ddd;
-    padding: 20px 0;
-    display: flex;
-    flex-direction: column;
-    z-index: 10;
-}
+.btn-main {
 
-.sidebar-item {
-    padding: 15px 25px;
-    cursor: pointer;
-    font-weight: 500;
-    color: #555;
-    transition: 0.2s;
-    border-left: 4px solid transparent;
-    display: flex;
-    align-items: center;
-}
-
-.sidebar-item i {
-    margin-right: 12px;
-    width: 20px;
-    text-align: center;
-    font-size: 1.1rem;
-}
-
-.sidebar-item:hover {
-    background: #fff5f5;
-    color: var(--primary-red);
-}
-
-.sidebar-item.active {
-    background: #fff5f5;
-    color: var(--primary-red);
-    border-left: 4px solid var(--primary-red);
-}
-
-/* 右側作業區 */
-.pdf-workspace {
-    flex: 1;
-    padding: 40px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.workspace-card {
-    background: #fff;
-    width: 100%;
-    max-width: 800px;
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-}
-
-.workspace-card h2 {
-    font-size: 1.8rem;
-    margin-bottom: 8px;
-    color: #222;
-}
-
-.workspace-card p {
-    color: #666;
-    margin-bottom: 30px;
-    font-size: 0.95rem;
-}
-
-/* 上傳框設計 */
-.upload-box {
-    border: 2px dashed #ddd;
-    background: #fafafa;
-    border-radius: 8px;
-    padding: 60px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-.upload-box:hover {
-    border-color: var(--primary-red);
-    background: #fffafa;
-}
-
-.upload-box i {
-    font-size: 3rem;
-    color: #ccc;
-    margin-bottom: 15px;
-}
-
-.upload-box p {
-    margin-bottom: 5px;
-    color: #444;
-}
-
-.upload-box span {
-    color: var(--primary-red);
-    text-decoration: underline;
-    font-weight: 600;
-}
-
-.upload-box small {
-    display: block;
-    margin-top: 15px;
-    color: #999;
-    font-size: 0.8rem;
-}
-
-/* 執行按鈕與通用的按鈕樣式 */
-.btn-main, .btn-execute {
     background: var(--primary-red);
+
     color: white;
+
     border: none;
+
     padding: 12px 35px;
+
     font-weight: bold;
+
     text-transform: uppercase;
+
     letter-spacing: 1px;
+
     cursor: pointer;
+
     transition: 0.3s;
-    border-radius: 4px;
+
 }
 
-.btn-execute {
-    width: 100%;
-    margin-top: 30px;
-    font-size: 1rem;
+
+
+.btn-main:hover {
+
+    filter: brightness(1.2);
+
 }
 
-.btn-main:hover, .btn-execute:hover {
-    filter: brightness(1.1);
-    box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);
+
+
+/* --- PDF 頁面專用樣式 --- */
+
+.pdf-container {
+
+    padding: 120px 0 60px;
+
+    min-height: 100vh;
+
 }
 
-/* --- 響應式調整 --- */
+
+
+.back-btn {
+
+    display: inline-block;
+
+    margin-bottom: 25px;
+
+    color: var(--primary-red);
+
+    text-decoration: none;
+
+    font-weight: 600;
+
+    font-size: 0.9rem;
+
+}
+
+
+
+.tool-section {
+
+    background: white;
+
+    padding: 40px;
+
+    border-radius: 12px;
+
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+
+}
+
+
+
+.upload-area {
+
+    border: 2px dashed #ddd;
+
+    padding: 60px 20px;
+
+    text-align: center;
+
+    border-radius: 8px;
+
+    margin: 25px 0;
+
+    transition: 0.3s;
+
+    cursor: pointer;
+
+    background: #fafafa;
+
+}
+
+
+
+.upload-area:hover {
+
+    border-color: var(--primary-red);
+
+    background: #fff5f5;
+
+}
+
+
+
+/* 手機版調整 */
+
 @media (max-width: 900px) {
-    /* 首頁手機版 */
+
     .hero-content { flex-direction: column-reverse; text-align: center; }
+
     .hero-text { padding: 0; margin-bottom: 40px; }
+
     .hero-text h1 { font-size: 3.5rem; }
+
     .grid-container { 
+
         grid-template-columns: repeat(2, 150px); 
+
         justify-content: center;
+
     }
 
-    /* PDF 頁面手機版 */
-    .pdf-layout { flex-direction: column; }
-    .pdf-sidebar { 
-        width: 100%; 
-        flex-direction: row; 
-        overflow-x: auto; 
-        border-bottom: 1px solid #ddd;
-        padding: 0;
-    }
-    .sidebar-item { 
-        white-space: nowrap; 
-        padding: 15px 20px; 
-        border-left: none;
-        border-bottom: 3px solid transparent;
-    }
-    .sidebar-item.active {
-        border-left: none;
-        border-bottom: 3px solid var(--primary-red);
-    }
-    .pdf-workspace { padding: 20px; }
 }
