@@ -6,13 +6,25 @@
     <title>PDF 處理中心 | KellyToolkit</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
 <body class="pdf-page">
 
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="index.html" class="logo">KELLY TOOLKIT</a>
+            <ul class="nav-links">
+                <li><a href="index.html">返回首頁</a></li>
+            </ul>
+        </div>
+    </nav>
+
     <main class="pdf-layout">
         <aside class="pdf-sidebar">
-            <div class="sidebar-item active" onclick="switchTool('crop')"><i class="fa-solid fa-crop"></i> 裁切頁面</div>
-            <div class="sidebar-item" onclick="switchTool('merge')"><i class="fa-solid fa-object-group"></i> 合成檔案</div>
+            <div class="sidebar-item" onclick="switchTool('crop')"><i class="fa-solid fa-crop"></i> 裁切頁面</div>
+            <div class="sidebar-item active" onclick="switchTool('merge')"><i class="fa-solid fa-object-group"></i> 合成檔案</div>
             <div class="sidebar-item" onclick="switchTool('number')"><i class="fa-solid fa-list-ol"></i> 編頁碼</div>
             <div class="sidebar-item" onclick="switchTool('rotate')"><i class="fa-solid fa-rotate"></i> 旋轉頁面</div>
             <div class="sidebar-item" onclick="switchTool('ocr')"><i class="fa-solid fa-eye"></i> 文字辨識</div>
@@ -20,37 +32,114 @@
 
         <section class="pdf-workspace">
             <div class="workspace-card">
-                <h2 id="tool-title">裁切頁面</h2>
-                <p id="tool-desc">請上傳 PDF 檔案以進行範圍裁切。所有操作均在本地完成，不會上傳伺服器。</p>
+                <h2 id="tool-title">合成檔案</h2>
+                <p id="tool-desc">請上傳最多 10 個 PDF，拖曳可調整合併順序。</p>
 
-                <div class="upload-box" onclick="document.getElementById('file-input').click()">
-                    <input type="file" id="file-input" hidden multiple>
+                <div class="upload-box" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                    <input type="file" id="file-input" hidden multiple accept="application/pdf">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <p>拖曳檔案至此 或 <span>點擊上傳檔案</span></p>
+                    <p>點擊上傳 PDF (最多 10 份)</p>
                 </div>
 
-                <button class="btn-execute">開始執行</button>
+                <ul id="file-list" class="sortable-list"></ul>
+
+                <button class="btn-execute" id="merge-btn" style="display: none;" onclick="processMerge()">開始合併並下載</button>
+                
+                <div id="status-msg" style="margin-top: 15px; color: var(--primary-red); font-weight: bold;"></div>
             </div>
         </section>
     </main>
 
     <script>
-        const tools = {
-            crop: { title: "裁切頁面", desc: "自定義 PDF 頁面尺寸與裁切範圍。" },
-            merge: { title: "合成檔案", desc: "將多個 PDF 檔案合併為一個文件。" },
-            number: { title: "編頁碼", desc: "在頁面指定位置自動插入頁碼。" },
-            rotate: { title: "旋轉頁面", desc: "修正 PDF 頁面方向（順時針/逆時針 90度）。" },
-            ocr: { title: "文字辨識 (OCR)", desc: "透過 OCR 技術辨識圖片型 PDF 內容。" }
+        let selectedFiles = [];
+        const fileListElement = document.getElementById('file-list');
+        const mergeBtn = document.getElementById('merge-btn');
+
+        // 初始化拖曳功能
+        const sortable = new Sortable(fileListElement, {
+            animation: 150,
+            ghostClass: 'sortable-ghost'
+        });
+
+        // 監聽檔案上傳
+        document.getElementById('file-input').onchange = function(e) {
+            const files = Array.from(e.target.files);
+            
+            if (selectedFiles.length + files.length > 10) {
+                alert("最多只能選擇 10 個檔案");
+                return;
+            }
+
+            files.forEach(file => {
+                if (file.type === "application/pdf") {
+                    selectedFiles.push(file);
+                }
+            });
+            
+            renderFileList();
         };
 
-        function switchTool(toolId) {
-            // 切換選單狀態
-            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+        function renderFileList() {
+            fileListElement.innerHTML = "";
+            selectedFiles.forEach((file, index) => {
+                const li = document.createElement('li');
+                li.className = "file-item";
+                li.dataset.id = index;
+                li.innerHTML = `
+                    <span><i class="fa-solid fa-grip-lines" style="cursor: grab; margin-right: 10px; color: #ccc;"></i> ${file.name}</span>
+                    <i class="fa-solid fa-trash-can" onclick="removeFile(${index})" style="cursor: pointer; color: #999;"></i>
+                `;
+                fileListElement.appendChild(li);
+            });
+            mergeBtn.style.display = selectedFiles.length > 1 ? "block" : "none";
+        }
 
-            // 切換內容
-            document.getElementById('tool-title').innerText = tools[toolId].title;
-            document.getElementById('tool-desc').innerText = tools[toolId].desc;
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            renderFileList();
+        }
+
+        // 核心合併邏輯
+        async function processMerge() {
+            const status = document.getElementById('status-msg');
+            status.innerText = "正在合併中，請稍候...";
+            
+            try {
+                const { PDFDocument } = PDFLib;
+                const mergedPdf = await PDFDocument.create();
+
+                // 根據目前畫面上拖曳後的順序來取得檔案
+                const currentOrder = Array.from(fileListElement.children).map(li => parseInt(li.dataset.id));
+                
+                for (const index of currentOrder) {
+                    const file = selectedFiles[index];
+                    const fileBytes = await file.arrayBuffer();
+                    const pdf = await PDFDocument.load(fileBytes);
+                    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                    copiedPages.forEach((page) => mergedPdf.addPage(page));
+                }
+
+                const pdfBytes = await mergedPdf.save();
+                
+                // 下載檔案
+                const blob = new Blob([pdfBytes], { type: "application/pdf" });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = "merged_kelly_toolkit.pdf";
+                link.click();
+                
+                status.innerText = "合併成功！";
+            } catch (err) {
+                console.error(err);
+                status.innerText = "合併失敗，請檢查檔案是否加密或損壞。";
+            }
+        }
+
+        // 工具切換邏輯 (維持原本的)
+        function switchTool(id) {
+            document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            // 這裡可以增加不同工具的 UI 顯示隱藏切換
         }
     </script>
 </body>
