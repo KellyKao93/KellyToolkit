@@ -12,14 +12,29 @@
 </head>
 <body class="pdf-page">
 
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="index.html" class="logo">KellyToolkit</a>
+        </div>
+    </nav>
 
     <main class="pdf-layout">
         <aside class="pdf-sidebar">
-            <div class="sidebar-item active" id="menu-crop" onclick="switchTool('crop')"><i class="fa-solid fa-crop"></i> 裁切頁面</div>
-            <div class="sidebar-item" id="menu-merge" onclick="switchTool('merge')"><i class="fa-solid fa-object-group"></i> 合成檔案</div>
-            <div class="sidebar-item" onclick="switchTool('number')"><i class="fa-solid fa-list-ol"></i> 編頁碼</div>
-            <div class="sidebar-item" onclick="switchTool('rotate')"><i class="fa-solid fa-rotate"></i> 旋轉頁面</div>
-            <div class="sidebar-item" onclick="switchTool('ocr')"><i class="fa-solid fa-eye"></i> 文字辨識</div>
+            <div class="sidebar-item active" id="menu-crop" onclick="switchTool('crop')">
+                <i class="fa-solid fa-crop"></i> 裁切頁面
+            </div>
+            <div class="sidebar-item" id="menu-merge" onclick="switchTool('merge')">
+                <i class="fa-solid fa-object-group"></i> 合成檔案
+            </div>
+            <div class="sidebar-item" id="menu-number" onclick="switchTool('number')">
+                <i class="fa-solid fa-list-ol"></i> 編頁碼
+            </div>
+            <div class="sidebar-item" id="menu-rotate" onclick="switchTool('rotate')">
+                <i class="fa-solid fa-rotate"></i> 旋轉頁面
+            </div>
+            <div class="sidebar-item" id="menu-ocr" onclick="switchTool('ocr')">
+                <i class="fa-solid fa-eye"></i> 文字辨識
+            </div>
         </aside>
 
         <section class="pdf-workspace">
@@ -58,30 +73,40 @@
         let selectedFiles = [];
         const { PDFDocument } = PDFLib;
 
-        // 切換工具邏輯
+        // 初始化拖曳功能 (針對合成檔案)
+        const fileListElement = document.getElementById('file-list');
+        new Sortable(fileListElement, {
+            animation: 150,
+            ghostClass: 'sortable-ghost'
+        });
+
         function switchTool(toolId) {
             currentTool = toolId;
-            selectedFiles = []; // 切換工具時清空檔案
+            selectedFiles = [];
             document.getElementById('file-list').innerHTML = "";
             document.getElementById('upload-text').innerText = (toolId === 'merge') ? "點擊上傳多個 PDF (最多 10 份)" : "點擊上傳 PDF 檔案";
             document.getElementById('file-input').multiple = (toolId === 'merge');
             
-            // UI 顯示切換
             document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
             document.getElementById(`menu-${toolId}`)?.classList.add('active');
             
-            const titles = { crop: "裁切頁面", merge: "合成檔案" };
-            const descs = { crop: "指定要擷取的頁碼範圍（例如第 3 到第 5 頁）。", merge: "上傳多個檔案並拖曳排序進行合併。" };
+            const titles = { crop: "裁切頁面", merge: "合成檔案", number: "編頁碼", rotate: "旋轉頁面", ocr: "文字辨識" };
+            const descs = { 
+                crop: "指定要擷取的頁碼範圍（例如第 3 到第 5 頁）。", 
+                merge: "上傳多個檔案並拖曳排序進行合併。",
+                number: "在頁面指定位置自動插入頁碼。",
+                rotate: "修正 PDF 頁面方向。",
+                ocr: "透過 OCR 技術辨識圖片型 PDF 內容。"
+            };
             
-            document.getElementById('tool-title').innerText = titles[toolId] || "開發中";
-            document.getElementById('tool-desc').innerText = descs[toolId] || "此功能即將上線。";
+            document.getElementById('tool-title').innerText = titles[toolId];
+            document.getElementById('tool-desc').innerText = descs[toolId];
             
             document.getElementById('crop-options').style.display = (toolId === 'crop') ? 'flex' : 'none';
             document.getElementById('file-list').style.display = (toolId === 'merge') ? 'block' : 'none';
             document.getElementById('status-msg').innerText = "";
         }
 
-        // 檔案選取監聽
         document.getElementById('file-input').onchange = async function(e) {
             const files = Array.from(e.target.files);
             if (currentTool === 'merge') {
@@ -91,7 +116,6 @@
                 selectedFiles = [files[0]];
                 document.getElementById('upload-text').innerText = "已選取: " + files[0].name;
                 
-                // 自動偵測總頁數並填入結束頁碼 (進階貼心功能)
                 const reader = new FileReader();
                 reader.onload = async (ex) => {
                     const pdf = await PDFDocument.load(ex.target.result);
@@ -109,62 +133,57 @@
             selectedFiles.forEach((f, i) => {
                 const li = document.createElement('li');
                 li.className = "file-item";
-                li.innerHTML = `<span>${f.name}</span><i class="fa-solid fa-trash" onclick="selectedFiles.splice(${i},1);renderFileList();"></i>`;
+                li.dataset.id = i;
+                li.innerHTML = `<span><i class="fa-solid fa-grip-lines" style="margin-right:10px; color:#ccc;"></i> ${f.name}</span><i class="fa-solid fa-trash" onclick="selectedFiles.splice(${i},1);renderFileList();" style="cursor:pointer;"></i>`;
                 list.appendChild(li);
             });
         }
 
-        // 執行按鈕分流
         async function handleExecute() {
             if (selectedFiles.length === 0) return alert("請先上傳檔案");
             if (currentTool === 'crop') processCrop();
             else if (currentTool === 'merge') processMerge();
+            else alert("該功能開發中");
         }
 
-        // 裁切邏輯 (擷取範圍)
         async function processCrop() {
             const status = document.getElementById('status-msg');
             const start = parseInt(document.getElementById('start-page').value);
             const end = parseInt(document.getElementById('end-page').value);
-
             status.innerText = "正在裁切中...";
             try {
                 const fileBytes = await selectedFiles[0].arrayBuffer();
                 const srcDoc = await PDFDocument.load(fileBytes);
                 const totalPages = srcDoc.getPageCount();
-
-                if (start < 1 || end > totalPages || start > end) {
-                    throw new Error("頁碼範圍不正確");
-                }
-
+                if (start < 1 || end > totalPages || start > end) throw new Error("頁碼範圍不正確");
                 const newDoc = await PDFDocument.create();
-                // pdf-lib 索引從 0 開始，所以要 -1
                 const indices = Array.from({length: (end - start + 1)}, (_, i) => start - 1 + i);
                 const copiedPages = await newDoc.copyPages(srcDoc, indices);
                 copiedPages.forEach(page => newDoc.addPage(page));
-
                 const pdfBytes = await newDoc.save();
                 downloadFile(pdfBytes, `cropped_${selectedFiles[0].name}`);
                 status.innerText = "裁切成功！";
-            } catch (err) {
-                status.innerText = "錯誤: " + err.message;
-            }
+            } catch (err) { status.innerText = "錯誤: " + err.message; }
         }
 
         async function processMerge() {
-            // (此處保留上一篇提供的 processMerge 邏輯代碼...)
             const status = document.getElementById('status-msg');
             status.innerText = "正在合併中...";
-            const mergedPdf = await PDFDocument.create();
-            for (const f of selectedFiles) {
-                const b = await f.arrayBuffer();
-                const p = await PDFDocument.load(b);
-                const pages = await mergedPdf.copyPages(p, p.getPageIndices());
-                pages.forEach(pg => mergedPdf.addPage(pg));
-            }
-            const res = await mergedPdf.save();
-            downloadFile(res, "merged_file.pdf");
-            status.innerText = "合併成功！";
+            try {
+                const mergedPdf = await PDFDocument.create();
+                // 依照目前的 DOM 順序合併
+                const currentOrder = Array.from(document.getElementById('file-list').children).map(li => parseInt(li.dataset.id));
+                for (const idx of currentOrder) {
+                    const f = selectedFiles[idx];
+                    const b = await f.arrayBuffer();
+                    const p = await PDFDocument.load(b);
+                    const pages = await mergedPdf.copyPages(p, p.getPageIndices());
+                    pages.forEach(pg => mergedPdf.addPage(pg));
+                }
+                const res = await mergedPdf.save();
+                downloadFile(res, "merged_kelly_toolkit.pdf");
+                status.innerText = "合併成功！";
+            } catch (err) { status.innerText = "合併失敗"; }
         }
 
         function downloadFile(bytes, name) {
