@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日誌稽核系統 | KellyToolkit</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+</head>
+<body class="pdf-page">
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="index.html" class="logo">KellyToolkit</a>
+        </div>
+    </nav>
+
+    <main class="pdf-layout">
+        <aside class="pdf-sidebar">
+            <div class="sidebar-item active"><i class="fa-solid fa-file-invoice"></i> 日誌稽核分割</div>
+            <div class="sidebar-item"><i class="fa-solid fa-gear"></i> 稽核規則設定</div>
+        </aside>
+
+        <section class="pdf-workspace">
+            <div class="workspace-card">
+                <h2>日誌稽核系統 (SA)</h2>
+                <p>請上傳 <b>A1000.xls</b> 與 <b>A1000_m.xls</b> 進行自動化分割與抽樣。</p>
+
+                <div class="sa-upload-container" style="display: grid; gap: 15px; margin: 20px 0;">
+                    <div class="file-input-box">
+                        <label>主日誌檔 (A1000)</label>
+                        <input type="file" id="file1" accept=".xls,.xlsx">
+                    </div>
+                    <div class="file-input-box">
+                        <label>備份日誌檔 (A1000_m)</label>
+                        <input type="file" id="file2" accept=".xls,.xlsx">
+                    </div>
+                </div>
+
+                <button class="btn-execute" id="run-btn" onclick="runPythonLogic()" disabled>
+                    正在初始化 Python 環境...
+                </button>
+                
+                <div id="status-log" style="margin-top: 20px; font-size: 0.85rem; color: #666; line-height: 1.6; white-space: pre-wrap;"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let pyodide;
+        const statusLog = document.getElementById('status-log');
+        const runBtn = document.getElementById('run-btn');
+
+        // 1. 初始化 Python 環境
+        async function initPyodide() {
+            pyodide = await loadPyodide();
+            await pyodide.loadPackage(["pandas", "openpyxl", "xlrd"]);
+            runBtn.disabled = false;
+            runBtn.innerText = "開始執行分析";
+            statusLog.innerText = "環境就緒，請上傳檔案後點擊執行。";
+        }
+        initPyodide();
+
+        // 2. 執行 Python 邏輯
+        async function runPythonLogic() {
+            const f1 = document.getElementById('file1').files[0];
+            const f2 = document.getElementById('file2').files[0];
+            if (!f1 || !f2) return alert("請同時上傳兩個檔案");
+
+            runBtn.disabled = true;
+            runBtn.innerText = "處理中...";
+            statusLog.innerText = "正在讀取檔案內容並執行稽核算法...";
+
+            try {
+                // 將 JS 檔案轉換為 Python 可讀取格式
+                const buffer1 = await f1.arrayBuffer();
+                const buffer2 = await f2.arrayBuffer();
+                
+                pyodide.FS.writeFile("file1.xls", new Uint8Array(buffer1));
+                pyodide.FS.writeFile("file2.xls", new Uint8Array(buffer2));
+
+                const pythonCode = `
+import pandas as pd
+import re
+from datetime import datetime
+from math import ceil
+import io
+
+def process():
+    df1 = pd.read_excel("file1.xls", header=None)
+    df2 = pd.read_excel("file2.xls", header=None)
+    df = pd.concat([df1, df2], ignore_index=True)
+    df.columns = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')[:df.shape[1]]
+
+    # 基礎清理
+    df['C_clean'] = df['C'].astype(str).str.replace(r'\\s|\\u3000', '', regex=True).str.lower()
+    df['E_clean'] = df['E'].astype(str).str.replace(r'\\s|\\u3000', '', regex=True).str.lower()
+
+    # 篩選邏輯
+    mask_delete = (df['E_clean'].str.contains('oa2')) & (~df['C_clean'].str.contains('8iy1k272'))
+    df_filtered = df[~mask_delete]
+
+    # 承商監審
+    keyword_pattern = "測|系統|工研院|凌群"
+    cond_C = df_filtered['C'].astype(str).str.contains(keyword_pattern)
+    df_special = df_filtered[cond_C]
+    df_rest = df_filtered[~cond_C]
+
+    # 抽樣 20%
+    sampled_rest = df_rest.groupby('C', group_keys=False).apply(
+        lambda x: x.sample(n=ceil(len(x)*0.2), random_state=1)
+    )
+
+    units = ["警政署資訊室作業設計科", "警政署資訊室前瞻應用科", "警政署資訊室資訊安全科", "警政署資訊室系統管理科"]
+    
+    results = {}
+    
+    # 產出 Special 檔案
+    out_special = io.BytesIO()
+    df_special.to_excel(out_special, index=False, header=False)
+    results["special"] = out_special.getvalue()
+
+    # 產出各單位檔案
+    unit_stats = []
+    month = datetime.now().month - 1 or 12
+    unit_stats.append(f"114年{month}月日誌記錄-承商、監審日誌資料：{len(df_special)}筆")
+
+    for unit in units:
+        unit_df_all = df_rest[df_rest['A'].astype(str).str.strip() == unit]
+        unit_df_sample = sampled_rest[sampled_rest['A'].astype(str).str.strip() == unit]
+        
+        out_unit = io.BytesIO()
+        unit_df_sample.to_excel(out_unit, index=False, header=False)
+        results[unit] = out_unit.getvalue()
+        
+        unit_stats.append(f"{unit}：全部{len(unit_df_all)}筆，抽樣20%{len(unit_df_sample)}筆")
+
+    return results, "\\n".join(unit_stats)
+
+res_dict, stats_text = process()
+`;
+                const result = await pyodide.runPythonAsync(pythonCode);
+                const resDict = result.get(0).toJs();
+                const statsText = result.get(1);
+
+                // 3. 處理下載
+                for (const [name, content] of resDict) {
+                    downloadBlob(content, `114年稽核-${name}.xlsx`);
+                }
+                
+                statusLog.innerText = "✅ 執行完畢！檔案已自動下載。\\n\\n【統計資訊】\\n" + statsText;
+
+            } catch (err) {
+                statusLog.innerText = "❌ 發生錯誤：\\n" + err;
+            } finally {
+                runBtn.disabled = false;
+                runBtn.innerText = "重新執行分析";
+            }
+        }
+
+        function downloadBlob(content, filename) {
+            const blob = new Blob([content], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            a.click();
+        }
+    </script>
+</body>
+</html>
