@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="pdf-page">
 
@@ -24,7 +25,7 @@
         <section class="pdf-workspace">
             <div class="workspace-card">
                 <h2>日誌稽核系統 (SA)</h2>
-                <p>請上傳 <b>A1000.xls</b> 與 <b>A1000_m.xls</b>。</p>
+                <p>上傳 <b>A1000.xls</b> 與 <b>A1000_m.xls</b>，系統將自動完成 20% 抽樣與單位分割。</p>
 
                 <div class="sa-upload-container" style="display: grid; gap: 15px; margin: 20px 0;">
                     <div class="file-input-box">
@@ -38,7 +39,7 @@
                 </div>
 
                 <button class="btn-execute" id="run-btn" onclick="runPythonLogic()" disabled>
-                    正在初始化 Python 環境...
+                    正在準備環境...
                 </button>
                 
                 <div id="status-log" style="margin-top: 20px; font-size: 0.85rem; color: #333; background: #f0f0f0; padding: 15px; border-radius: 5px; white-space: pre-wrap; display: none;"></div>
@@ -54,13 +55,13 @@
         async function initPyodide() {
             try {
                 pyodide = await loadPyodide();
-                // 載入必要的 Python 庫
                 await pyodide.loadPackage(["pandas", "openpyxl", "xlrd"]);
                 runBtn.disabled = false;
-                runBtn.innerText = "開始執行分析";
-            } catch (e) {
+                runBtn.innerText = "稽核檔案"; // 初始化完成後顯示
                 statusLog.style.display = "block";
-                statusLog.innerText = "初始化失敗，請檢查網路連線。";
+                statusLog.innerText = "環境就緒，請上傳檔案。";
+            } catch (e) {
+                statusLog.innerText = "初始化失敗，請檢查網路。";
             }
         }
         initPyodide();
@@ -72,14 +73,12 @@
 
             runBtn.disabled = true;
             runBtn.innerText = "處理中...";
-            statusLog.style.display = "block";
-            statusLog.innerText = "正在讀取檔案...";
+            statusLog.innerText = "🚀 正在執行稽核運算與抽樣邏輯...";
 
             try {
                 const b1 = await f1.arrayBuffer();
                 const b2 = await f2.arrayBuffer();
                 
-                // 寫入虛擬檔案系統
                 pyodide.FS.writeFile("input_file1.xls", new Uint8Array(b1));
                 pyodide.FS.writeFile("input_file2.xls", new Uint8Array(b2));
 
@@ -93,7 +92,6 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import Border, Side
 import os
 
-# 模擬原有的邏輯，但改為在虛擬環境執行
 file1 = "input_file1.xls"
 file2 = "input_file2.xls"
 month = datetime.now().month - 1 or 12
@@ -114,7 +112,7 @@ def save_with_headers(df_to_save, filename, headers, extra=None):
             cell.border = Border(left=thin, right=thin, top=thin, bottom=thin)
     wb.save(filename)
 
-# 讀取與合併
+# 合併與清理
 df1 = pd.read_excel(file1, header=None)
 df2 = pd.read_excel(file2, header=None)
 df = pd.concat([df1, df2], ignore_index=True)
@@ -123,15 +121,17 @@ df.columns = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')[:df.shape[1]]
 df['C_clean'] = df['C'].apply(clean_str_for_match)
 df['E_clean'] = df['E'].apply(clean_str_for_match)
 
-# 剔除與過濾
+# 剔除 oa2 且非特定代碼
 mask_delete = (df['E_clean'].str.contains('oa2')) & (~df['C_clean'].str.contains('8iy1k272'))
 df_filtered = df[~mask_delete]
 
+# 承商監審關鍵字
 keyword_pattern = '|'.join(["測", "系統", "工研院", "凌群"])
 cond_C = df_filtered['C'].astype(str).str.contains(keyword_pattern)
 df_special = df_filtered[cond_C].copy()
 df_rest = df_filtered[~cond_C]
 
+# 20% 隨機抽樣
 sampled_rest = df_rest.groupby('C', as_index=False, group_keys=False).apply(
     lambda x: x.sample(n=ceil(len(x)*0.2), random_state=1)).reset_index(drop=True)
 
@@ -145,52 +145,55 @@ special_fn = f"114年{month}月日誌記錄-承商、監審日誌資料.xlsx"
 save_with_headers(df_special, special_fn, headers, "實際查詢人(承商、監審稽核填寫使用)")
 output_files.append(special_fn)
 
-stats_lines = [f"114年{month}月日誌記錄-承商、監審日誌資料：{len(df_special)}筆"]
+stats_lines = [f"【114年{month}月 稽核統計報告】", f"承商、監審日誌：{len(df_special)}筆"]
 
 for unit in units:
     unit_df_all = df_rest[df_rest['A'].astype(str).str.strip() == unit]
     unit_df_sample_20p = sampled_rest[sampled_rest['A'].astype(str).str.strip() == unit]
-    unit_df_exclude = unit_df_all[~unit_df_all['E_clean'].str.contains('oa2')]
     
     filename = f"114年{month}月日誌記錄-{unit}.xlsx"
     save_with_headers(unit_df_sample_20p, filename, headers)
     output_files.append(filename)
-    
-    stats_lines.append(f"{filename}：全部{len(unit_df_all)}筆，抽樣20%{len(unit_df_sample_20p)}筆，扣除人事後{len(unit_df_exclude)}筆")
+    stats_lines.append(f"{unit}：全部{len(unit_df_all)}筆 / 抽樣{len(unit_df_sample_20p)}筆")
 
-# 產出統計文字
 txt_fn = f"115年{month}月日誌記錄_資料統計.txt"
 with open(txt_fn, 'w', encoding='utf-8') as f:
     f.write("\\n".join(stats_lines))
 output_files.append(txt_fn)
 
-# 回傳檔案清單給 JavaScript
-output_files
+output_files # 回傳檔案清單
 `;
-                // 執行 Python
-                const fileList = await pyodide.runPythonAsync(pythonCode);
-                const filesToDownload = fileList.toJs();
+                const fileList = (await pyodide.runPythonAsync(pythonCode)).toJs();
 
-                // 3. 將生成的檔案從虛擬系統下載到使用者電腦
-                for (const fileName of filesToDownload) {
+                // 📦 JSZip 打包邏輯
+                const zip = new JSZip();
+                for (const fileName of fileList) {
                     const content = pyodide.FS.readFile(fileName);
-                    const type = fileName.endsWith(".txt") ? "text/plain" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-                    const blob = new Blob([content], { type: type });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = fileName;
-                    a.click();
+                    zip.file(fileName, content);
                 }
 
-                statusLog.innerText = "✅ 執行成功！已產出所有檔案並自動下載。";
+                // 生成 ZIP 並下載
+                const zipBlob = await zip.generateAsync({ type: "blob" });
+                const month = new Date().getMonth() || 12;
+                downloadBlob(zipBlob, `114年${month}月_日誌稽核結果.zip`);
+
+                statusLog.innerText = "✅ 稽核完成！所有檔案已打包為 ZIP 下載。";
 
             } catch (err) {
-                statusLog.innerText = "❌ 錯誤：\\n" + err;
+                statusLog.innerText = "❌ 處理失敗：\\n" + err;
             } finally {
                 runBtn.disabled = false;
-                runBtn.innerText = "重新執行";
+                runBtn.innerText = "稽核檔案";
             }
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
