@@ -19,13 +19,12 @@
     <main class="pdf-layout">
         <aside class="pdf-sidebar">
             <div class="sidebar-item active"><i class="fa-solid fa-file-invoice"></i> 日誌稽核分割</div>
-            <div class="sidebar-item"><i class="fa-solid fa-gear"></i> 稽核規則設定</div>
         </aside>
 
         <section class="pdf-workspace">
             <div class="workspace-card">
                 <h2>日誌稽核系統 (SA)</h2>
-                <p>請上傳 <b>A1000.xls</b> 與 <b>A1000_m.xls</b> 進行自動化分割與抽樣。</p>
+                <p>請上傳 <b>A1000.xls</b> 與 <b>A1000_m.xls</b>。</p>
 
                 <div class="sa-upload-container" style="display: grid; gap: 15px; margin: 20px 0;">
                     <div class="file-input-box">
@@ -42,7 +41,7 @@
                     正在初始化 Python 環境...
                 </button>
                 
-                <div id="status-log" style="margin-top: 20px; font-size: 0.85rem; color: #666; line-height: 1.6; white-space: pre-wrap;"></div>
+                <div id="status-log" style="margin-top: 20px; font-size: 0.85rem; color: #333; background: #f0f0f0; padding: 15px; border-radius: 5px; white-space: pre-wrap; display: none;"></div>
             </div>
         </section>
     </main>
@@ -52,120 +51,146 @@
         const statusLog = document.getElementById('status-log');
         const runBtn = document.getElementById('run-btn');
 
-        // 1. 初始化 Python 環境
         async function initPyodide() {
-            pyodide = await loadPyodide();
-            await pyodide.loadPackage(["pandas", "openpyxl", "xlrd"]);
-            runBtn.disabled = false;
-            runBtn.innerText = "開始執行分析";
-            statusLog.innerText = "環境就緒，請上傳檔案後點擊執行。";
+            try {
+                pyodide = await loadPyodide();
+                // 載入必要的 Python 庫
+                await pyodide.loadPackage(["pandas", "openpyxl", "xlrd"]);
+                runBtn.disabled = false;
+                runBtn.innerText = "開始執行分析";
+            } catch (e) {
+                statusLog.style.display = "block";
+                statusLog.innerText = "初始化失敗，請檢查網路連線。";
+            }
         }
         initPyodide();
 
-        // 2. 執行 Python 邏輯
         async function runPythonLogic() {
             const f1 = document.getElementById('file1').files[0];
             const f2 = document.getElementById('file2').files[0];
-            if (!f1 || !f2) return alert("請同時上傳兩個檔案");
+            if (!f1 || !f2) return alert("請同時上傳兩個日誌檔案！");
 
             runBtn.disabled = true;
             runBtn.innerText = "處理中...";
-            statusLog.innerText = "正在讀取檔案內容並執行稽核算法...";
+            statusLog.style.display = "block";
+            statusLog.innerText = "正在讀取檔案...";
 
             try {
-                // 將 JS 檔案轉換為 Python 可讀取格式
-                const buffer1 = await f1.arrayBuffer();
-                const buffer2 = await f2.arrayBuffer();
+                const b1 = await f1.arrayBuffer();
+                const b2 = await f2.arrayBuffer();
                 
-                pyodide.FS.writeFile("file1.xls", new Uint8Array(buffer1));
-                pyodide.FS.writeFile("file2.xls", new Uint8Array(buffer2));
+                // 寫入虛擬檔案系統
+                pyodide.FS.writeFile("input_file1.xls", new Uint8Array(b1));
+                pyodide.FS.writeFile("input_file2.xls", new Uint8Array(b2));
 
                 const pythonCode = `
 import pandas as pd
 import re
 from datetime import datetime
 from math import ceil
-import io
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.styles import Border, Side
+import os
 
-def process():
-    df1 = pd.read_excel("file1.xls", header=None)
-    df2 = pd.read_excel("file2.xls", header=None)
-    df = pd.concat([df1, df2], ignore_index=True)
-    df.columns = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')[:df.shape[1]]
+# 模擬原有的邏輯，但改為在虛擬環境執行
+file1 = "input_file1.xls"
+file2 = "input_file2.xls"
+month = datetime.now().month - 1 or 12
 
-    # 基礎清理
-    df['C_clean'] = df['C'].astype(str).str.replace(r'\\s|\\u3000', '', regex=True).str.lower()
-    df['E_clean'] = df['E'].astype(str).str.replace(r'\\s|\\u3000', '', regex=True).str.lower()
+def clean_str_for_match(s):
+    if pd.isna(s): return ""
+    return re.sub(r'\\s|\\u3000', '', str(s)).lower()
 
-    # 篩選邏輯
-    mask_delete = (df['E_clean'].str.contains('oa2')) & (~df['C_clean'].str.contains('8iy1k272'))
-    df_filtered = df[~mask_delete]
+def save_with_headers(df_to_save, filename, headers, extra=None):
+    wb = Workbook()
+    ws = wb.active
+    ws.append(headers + ([extra] if extra else []))
+    for row in dataframe_to_rows(df_to_save, index=False, header=False):
+        ws.append(row)
+    thin = Side(border_style="thin", color="000000")
+    for row in ws.iter_rows():
+        for cell in row:
+            cell.border = Border(left=thin, right=thin, top=thin, bottom=thin)
+    wb.save(filename)
 
-    # 承商監審
-    keyword_pattern = "測|系統|工研院|凌群"
-    cond_C = df_filtered['C'].astype(str).str.contains(keyword_pattern)
-    df_special = df_filtered[cond_C]
-    df_rest = df_filtered[~cond_C]
+# 讀取與合併
+df1 = pd.read_excel(file1, header=None)
+df2 = pd.read_excel(file2, header=None)
+df = pd.concat([df1, df2], ignore_index=True)
+df.columns = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')[:df.shape[1]]
 
-    # 抽樣 20%
-    sampled_rest = df_rest.groupby('C', group_keys=False).apply(
-        lambda x: x.sample(n=ceil(len(x)*0.2), random_state=1)
-    )
+df['C_clean'] = df['C'].apply(clean_str_for_match)
+df['E_clean'] = df['E'].apply(clean_str_for_match)
 
-    units = ["警政署資訊室作業設計科", "警政署資訊室前瞻應用科", "警政署資訊室資訊安全科", "警政署資訊室系統管理科"]
+# 剔除與過濾
+mask_delete = (df['E_clean'].str.contains('oa2')) & (~df['C_clean'].str.contains('8iy1k272'))
+df_filtered = df[~mask_delete]
+
+keyword_pattern = '|'.join(["測", "系統", "工研院", "凌群"])
+cond_C = df_filtered['C'].astype(str).str.contains(keyword_pattern)
+df_special = df_filtered[cond_C].copy()
+df_rest = df_filtered[~cond_C]
+
+sampled_rest = df_rest.groupby('C', as_index=False, group_keys=False).apply(
+    lambda x: x.sample(n=ceil(len(x)*0.2), random_state=1)).reset_index(drop=True)
+
+units = ["警政署資訊室作業設計科", "警政署資訊室前瞻應用科", "警政署資訊室資訊安全科", "警政署資訊室系統管理科"]
+headers = ["單位名稱", "使用日期", "使用者", "IP", "查詢作業", "網頁名稱", "實際查詢者", "實際查詢單位", "用途", "查詢內容", "查詢事由"]
+
+output_files = []
+
+# 產出特種日誌
+special_fn = f"114年{month}月日誌記錄-承商、監審日誌資料.xlsx"
+save_with_headers(df_special, special_fn, headers, "實際查詢人(承商、監審稽核填寫使用)")
+output_files.append(special_fn)
+
+stats_lines = [f"114年{month}月日誌記錄-承商、監審日誌資料：{len(df_special)}筆"]
+
+for unit in units:
+    unit_df_all = df_rest[df_rest['A'].astype(str).str.strip() == unit]
+    unit_df_sample_20p = sampled_rest[sampled_rest['A'].astype(str).str.strip() == unit]
+    unit_df_exclude = unit_df_all[~unit_df_all['E_clean'].str.contains('oa2')]
     
-    results = {}
+    filename = f"114年{month}月日誌記錄-{unit}.xlsx"
+    save_with_headers(unit_df_sample_20p, filename, headers)
+    output_files.append(filename)
     
-    # 產出 Special 檔案
-    out_special = io.BytesIO()
-    df_special.to_excel(out_special, index=False, header=False)
-    results["special"] = out_special.getvalue()
+    stats_lines.append(f"{filename}：全部{len(unit_df_all)}筆，抽樣20%{len(unit_df_sample_20p)}筆，扣除人事後{len(unit_df_exclude)}筆")
 
-    # 產出各單位檔案
-    unit_stats = []
-    month = datetime.now().month - 1 or 12
-    unit_stats.append(f"114年{month}月日誌記錄-承商、監審日誌資料：{len(df_special)}筆")
+# 產出統計文字
+txt_fn = f"115年{month}月日誌記錄_資料統計.txt"
+with open(txt_fn, 'w', encoding='utf-8') as f:
+    f.write("\\n".join(stats_lines))
+output_files.append(txt_fn)
 
-    for unit in units:
-        unit_df_all = df_rest[df_rest['A'].astype(str).str.strip() == unit]
-        unit_df_sample = sampled_rest[sampled_rest['A'].astype(str).str.strip() == unit]
-        
-        out_unit = io.BytesIO()
-        unit_df_sample.to_excel(out_unit, index=False, header=False)
-        results[unit] = out_unit.getvalue()
-        
-        unit_stats.append(f"{unit}：全部{len(unit_df_all)}筆，抽樣20%{len(unit_df_sample)}筆")
-
-    return results, "\\n".join(unit_stats)
-
-res_dict, stats_text = process()
+# 回傳檔案清單給 JavaScript
+output_files
 `;
-                const result = await pyodide.runPythonAsync(pythonCode);
-                const resDict = result.get(0).toJs();
-                const statsText = result.get(1);
+                // 執行 Python
+                const fileList = await pyodide.runPythonAsync(pythonCode);
+                const filesToDownload = fileList.toJs();
 
-                // 3. 處理下載
-                for (const [name, content] of resDict) {
-                    downloadBlob(content, `114年稽核-${name}.xlsx`);
+                // 3. 將生成的檔案從虛擬系統下載到使用者電腦
+                for (const fileName of filesToDownload) {
+                    const content = pyodide.FS.readFile(fileName);
+                    const type = fileName.endsWith(".txt") ? "text/plain" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                    const blob = new Blob([content], { type: type });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = fileName;
+                    a.click();
                 }
-                
-                statusLog.innerText = "✅ 執行完畢！檔案已自動下載。\\n\\n【統計資訊】\\n" + statsText;
+
+                statusLog.innerText = "✅ 執行成功！已產出所有檔案並自動下載。";
 
             } catch (err) {
-                statusLog.innerText = "❌ 發生錯誤：\\n" + err;
+                statusLog.innerText = "❌ 錯誤：\\n" + err;
             } finally {
                 runBtn.disabled = false;
-                runBtn.innerText = "重新執行分析";
+                runBtn.innerText = "重新執行";
             }
-        }
-
-        function downloadBlob(content, filename) {
-            const blob = new Blob([content], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = filename;
-            a.click();
         }
     </script>
 </body>
