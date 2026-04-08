@@ -211,3 +211,23 @@ body { background: var(--gray-bg); }
 input[type="radio"] {
     accent-color: var(--primary-red);
 }
+
+.file-input-box {
+    background: #fff;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+}
+
+.file-input-box label {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.file-input-box input {
+    font-size: 0.9rem;
+}
